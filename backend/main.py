@@ -60,27 +60,24 @@ Text:
 # PDF UPLOAD (PAGE BATCHING)
 # =========================
 @app.post("/upload-pdf")
-async def upload_pdf(
-    file: UploadFile = File(...),
-    start_page: int = 0
-):
+async def upload_pdf(file: UploadFile = File(...)):
     extracted_text = ""
-    PAGES_PER_REQUEST = 2
-    MAX_CHARS = 700
+
+    MAX_PAGES = 4        # 🔥 safe for Render
+    MAX_CHARS = 550     # 🔥 safe chunk
 
     with pdfplumber.open(file.file) as pdf:
-        end_page = min(start_page + PAGES_PER_REQUEST, len(pdf.pages))
-
-        for i in range(start_page, end_page):
-            text = pdf.pages[i].extract_text()
+        for i, page in enumerate(pdf.pages):
+            if i >= MAX_PAGES:
+                break
+            text = page.extract_text()
             if text:
                 extracted_text += text + "\n"
 
     if not extracted_text.strip():
         return {
-            "status": "done",
-            "explanation": "",
-            "next_page": None
+            "status": "error",
+            "explanation": "PDF se text read nahi ho pa raha"
         }
 
     chunks = [
@@ -89,14 +86,13 @@ async def upload_pdf(
     ]
 
     explanations = []
-    for chunk in chunks[:2]:
+
+    for chunk in chunks[:2]:   # 🔥 ONLY 2 chunks (very important)
         explanations.append(explain_like_teacher(chunk))
 
     final_explanation = "\n\n".join(explanations)
-    final_explanation = final_explanation[:1200]
 
     return {
         "status": "success",
-        "explanation": final_explanation,
-        "next_page": end_page
+        "explanation": final_explanation
     }
