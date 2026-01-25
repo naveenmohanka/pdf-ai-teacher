@@ -3,53 +3,40 @@ const BACKEND_URL = "https://pdf-ai-teacher.onrender.com";
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
-  const loader = document.getElementById("loader");
   const audioPlayer = document.getElementById("audioPlayer");
-  const wave = document.getElementById("voiceWave");
 
   if (!fileInput.files.length) {
-    alert("PDF select karo pehle");
+    alert("Please select a file first");
     return;
   }
 
-  explanationBox.textContent = "";
+  explanationBox.innerText = "⏳ Teacher is reading your PDF...";
   audioPlayer.src = "";
-  wave.classList.add("hidden");
-
-  loader.classList.remove("hidden");
+  audioPlayer.style.display = "none";
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
-    const res = await fetch(`${BACKEND_URL}/upload-pdf`, {
+    const response = await fetch(`${BACKEND_URL}/upload-pdf`, {
       method: "POST",
       body: formData
     });
 
-    const data = await res.json();
-    loader.classList.add("hidden");
+    const data = await response.json();
 
-    typeWriterEffect(data.explanation, explanationBox);
+    // ✅ TEXT
+    explanationBox.innerText = data.explanation;
 
-    audioPlayer.src = BACKEND_URL + data.audio_url;
-
-    audioPlayer.onplay = () => wave.classList.remove("hidden");
-    audioPlayer.onpause = () => wave.classList.add("hidden");
+    // ✅ AUDIO
+    if (data.audio_url) {
+      audioPlayer.src = BACKEND_URL + data.audio_url;
+      audioPlayer.style.display = "block";
+      audioPlayer.play();
+    }
 
   } catch (err) {
-    loader.classList.add("hidden");
-    explanationBox.textContent = "❌ Error connecting to backend";
+    explanationBox.innerText = "❌ Error connecting to backend";
+    console.error(err);
   }
-}
-
-function typeWriterEffect(text, element) {
-  let i = 0;
-  element.textContent = "";
-
-  const interval = setInterval(() => {
-    element.textContent += text[i];
-    i++;
-    if (i >= text.length) clearInterval(interval);
-  }, 20);
 }
