@@ -1,4 +1,14 @@
 const BACKEND_URL = "https://pdf-ai-teacher.onrender.com";
+function typeEffect(element, text, speed = 20) {
+  element.innerHTML = "";
+  let i = 0;
+
+  const interval = setInterval(() => {
+    element.innerHTML += text.charAt(i);
+    i++;
+    if (i >= text.length) clearInterval(interval);
+  }, speed);
+}
 
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
@@ -26,7 +36,7 @@ async function uploadPDF() {
     const data = await response.json();
 
     // ✅ TEXT
-    explanationBox.innerText = data.explanation;
+    typeEffect(explanationBox, data.explanation);
 
     // ✅ AUDIO
     if (data.audio_url) {
