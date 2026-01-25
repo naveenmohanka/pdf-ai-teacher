@@ -1,33 +1,59 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import pdfplumber
 import os
 import uuid
 import asyncio
 from openai import OpenAI
 import edge_tts
-from fastapi.responses import FileResponse
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# =========================
+# CONFIG
+# =========================
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
+AUDIO_DIR = "audio_files"
+os.makedirs(AUDIO_DIR, exist_ok=True)
+
+# =========================
+# APP INIT
+# =========================
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # frontend ke liye
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# =========================
+# ROOT
+# =========================
 @app.get("/")
 def home():
-    return {"message": "PDF AI Teacher backend running with voice"}
+    return {"message": "PDF AI Teacher backend running with Hinglish voice"}
 
-def explain_like_teacher(text: str):
+# =========================
+# AI EXPLANATION
+# =========================
+def explain_like_teacher(text: str) -> str:
     prompt = f"""
-Explain the following content like a teacher.
-Use very easy Hinglish (Hindi + English mix).
-Explain slowly and clearly.
+Tum ek friendly Indian teacher ho.
+
+Task:
+Neeche diye gaye PDF content ko
+bilkul simple Hinglish me samjhao,
+jaise tum student se directly baat kar rahe ho.
+
+Rules:
+- Hindi + English mix (Hinglish)
+- Bahut formal mat banna
+- Short paragraphs
+- Examples use karo
+- Aisa lagna chahiye jaise real teacher samjha raha ho
 
 Content:
 {text}
@@ -36,42 +62,71 @@ Content:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a friendly teacher who explains slowly."},
+            {
+                "role": "system",
+                "content": "You are a friendly Indian teacher who explains concepts casually in Hinglish."
+            },
             {"role": "user", "content": prompt}
-        ]
+        ],
+        temperature=0.7
     )
 
-    return response.choices[0].message.content
+    return response.choices[0].message.content.strip()
 
+# =========================
+# TEXT TO SPEECH
+# =========================
+async def text_to_speech(text: str, filepath: str):
+    voice = "en-IN-NeerjaNeural"  # Indian female voice
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=voice,
+        rate="+0%",
+        volume="+0%"
+    )
+    await communicate.save(filepath)
 
-async def text_to_speech(text: str, filename: str):
-    voice = "en-IN-NeerjaNeural"
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(filename)
-
-
+# =========================
+# PDF UPLOAD
+# =========================
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     extracted_text = ""
 
     with pdfplumber.open(file.file) as pdf:
         for page in pdf.pages:
-            text = page.extract_text()
-            if text:
-                extracted_text += text + "\n"
+            page_text = page.extract_text()
+            if page_text:
+                extracted_text += page_text + "\n"
 
-    explanation = explain_like_teacher(extracted_text[:1000])
+    if not extracted_text.strip():
+        return {
+            "status": "error",
+            "message": "No readable text found in PDF"
+        }
 
-    audio_file = f"audio_{uuid.uuid4()}.mp3"
-    await text_to_speech(explanation, audio_file)
+    # Limit text for speed (Render friendly)
+    explanation = explain_like_teacher(extracted_text[:1200])
+
+    audio_filename = f"{uuid.uuid4()}.mp3"
+    audio_path = os.path.join(AUDIO_DIR, audio_filename)
+
+    await text_to_speech(explanation, audio_path)
 
     return {
         "status": "success",
         "explanation": explanation,
-        "audio_url": f"/audio/{audio_file}"
+        "audio_file": audio_filename
     }
 
-
+# =========================
+# AUDIO SERVE
+# =========================
 @app.get("/audio/{audio_file}")
 def get_audio(audio_file: str):
-    return FileResponse(audio_file, media_type="audio/mpeg")
+    file_path = os.path.join(AUDIO_DIR, audio_file)
+
+    if not os.path.exists(file_path):
+        return {"error": "Audio file not found"}
+
+    return FileResponse(file_path, media_type="audio/mpeg")
