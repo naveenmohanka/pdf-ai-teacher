@@ -2,42 +2,41 @@ async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
   const audioPlayer = document.getElementById("audioPlayer");
+  const loader = document.getElementById("loader");
+  const wave = document.getElementById("voiceWave");
 
-  if (!fileInput || fileInput.files.length === 0) {
-    alert("Please select a PDF file");
+  if (!fileInput.files.length) {
+    alert("Please select a PDF");
     return;
   }
 
-  explanationBox.innerText = "⏳ AI teacher samjha raha hai...";
+  loader.classList.remove("hidden");
+  wave.classList.add("hidden");
+  explanationBox.innerText = "";
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
-    const response = await fetch(
+    const res = await fetch(
       "https://pdf-ai-teacher.onrender.com/upload-pdf",
-      {
-        method: "POST",
-        body: formData
-      }
+      { method: "POST", body: formData }
     );
 
-    if (!response.ok) {
-      throw new Error("Server error");
-    }
+    const data = await res.json();
 
-    const data = await response.json();
-
+    loader.classList.add("hidden");
     explanationBox.innerText = data.explanation;
 
     audioPlayer.src =
       "https://pdf-ai-teacher.onrender.com" + data.audio_url;
 
-    audioPlayer.load();
+    wave.classList.remove("hidden");
     audioPlayer.play();
 
-  } catch (error) {
-    console.error(error);
-    explanationBox.innerText = "❌ Backend error or server sleeping";
+  } catch (err) {
+    loader.classList.add("hidden");
+    explanationBox.innerText = "❌ Backend error (server waking up?)";
+    console.error(err);
   }
 }
