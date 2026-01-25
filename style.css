@@ -1,18 +1,61 @@
 body {
   font-family: Arial, sans-serif;
+  background: #f9fafb;
   padding: 30px;
-  background: #f9f9f9;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+.upload-box {
+  margin-bottom: 20px;
 }
 
 button {
   padding: 8px 14px;
-  margin-left: 10px;
   cursor: pointer;
 }
 
-pre {
+.loader {
+  margin: 15px 0;
+  font-size: 16px;
+  animation: pulse 1.5s infinite;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.explanation {
   background: #fff;
   padding: 15px;
-  max-height: 300px;
-  overflow: auto;
+  border-radius: 8px;
+  min-height: 120px;
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.voice-box {
+  margin-top: 10px;
+}
+
+.wave {
+  width: 120px;
+  height: 20px;
+  background: linear-gradient(90deg, #4f46e5, #22c55e);
+  animation: wave 1s infinite linear;
+  margin-bottom: 8px;
+}
+
+@keyframes wave {
+  0% { transform: scaleX(0.6); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(0.6); }
 }
