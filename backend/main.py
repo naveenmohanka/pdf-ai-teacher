@@ -80,15 +80,16 @@ Content:
 # =========================
 # TEXT TO SPEECH
 # =========================
-async def text_to_speech(text: str, filepath: str):
-    voice = "en-IN-NeerjaNeural"  # Indian female voice
+async def text_to_speech(text: str, filename: str):
+    voice = "en-IN-NeerjaNeural"
     communicate = edge_tts.Communicate(
         text=text,
         voice=voice,
         rate="+0%",
-        volume="+0%"
+        pitch="+0Hz"
     )
-    await communicate.save(filepath)
+    await communicate.save(filename)
+
 
 # =========================
 # PDF UPLOAD
