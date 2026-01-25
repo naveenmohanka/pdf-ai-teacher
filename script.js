@@ -40,12 +40,16 @@ async function uploadPDF() {
 
     // ✅ AUDIO
     if (data.audio_url) {
-      audioPlayer.src = BACKEND_URL + data.audio_url;
-      audioPlayer.style.display = "block";
+     audioPlayer.src = backendUrl + data.audio_url;
+audioPlayer.load();
+
+setTimeout(() => {
+  audioPlayer.play().catch(() => {});
+}, 500);
   
     }
 
-  } catch (err) {
+   catch (err) {
     explanationBox.innerText = "❌ Error connecting to backend";
     console.error(err);
   }
