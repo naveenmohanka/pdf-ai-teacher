@@ -1,42 +1,48 @@
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
-  const audioPlayer = document.getElementById("audioPlayer");
-  const loader = document.getElementById("loader");
-  const wave = document.getElementById("voiceWave");
 
   if (!fileInput.files.length) {
     alert("Please select a PDF");
     return;
   }
 
-  loader.classList.remove("hidden");
-  wave.classList.add("hidden");
-  explanationBox.innerText = "";
+  explanationBox.innerText = "🤖 AI teacher samjha raha hai...";
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
-    const res = await fetch(
+    const response = await fetch(
       "https://pdf-ai-teacher.onrender.com/upload-pdf",
-      { method: "POST", body: formData }
+      {
+        method: "POST",
+        body: formData
+      }
     );
 
-    const data = await res.json();
-
-    loader.classList.add("hidden");
+    const data = await response.json();
     explanationBox.innerText = data.explanation;
 
-    audioPlayer.src =
-      "https://pdf-ai-teacher.onrender.com" + data.audio_url;
-
-    wave.classList.remove("hidden");
-    audioPlayer.play();
+    // 🔥 BROWSER VOICE
+    speakLikeTeacher(data.explanation);
 
   } catch (err) {
-    loader.classList.add("hidden");
-    explanationBox.innerText = "❌ Backend error (server waking up?)";
     console.error(err);
+    explanationBox.innerText = "❌ Backend error (server waking up?)";
   }
+}
+
+// =========================
+// VOICE FUNCTION
+// =========================
+function speakLikeTeacher(text) {
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-IN";
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+
+  speechSynthesis.speak(utterance);
 }
