@@ -42,7 +42,7 @@ async function uploadPDF() {
     if (data.audio_url) {
       audioPlayer.src = BACKEND_URL + data.audio_url;
       audioPlayer.style.display = "block";
-      audioPlayer.play();
+  
     }
 
   } catch (err) {
