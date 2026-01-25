@@ -4,38 +4,6 @@ const backendUrl = "https://pdf-ai-teacher.onrender.com";
 /* =========================
    🔊 VOICE (Browser Speech)
 ========================= */
-let speechUtterance = null;
-let isSpeaking = false;
-
-function speakText(text) {
-  if (!("speechSynthesis" in window)) {
-    alert("Browser speech support nahi karta");
-    return;
-  }
-
-  window.speechSynthesis.cancel(); // purani voice band
-  speechUtterance = new SpeechSynthesisUtterance(text);
-
-  speechUtterance.lang = "en-IN";   // Hinglish best
-  speechUtterance.rate = 0.9;       // natural speed
-  speechUtterance.pitch = 1;
-
-  isSpeaking = true;
-  window.speechSynthesis.speak(speechUtterance);
-}
-
-function pauseSpeech() {
-  if (isSpeaking) window.speechSynthesis.pause();
-}
-
-function resumeSpeech() {
-  if (isSpeaking) window.speechSynthesis.resume();
-}
-
-function stopSpeech() {
-  window.speechSynthesis.cancel();
-  isSpeaking = false;
-}
 
 /* =========================
    📄 PDF UPLOAD + EXPLAIN
