@@ -33,24 +33,40 @@ def home():
 # =========================
 def explain_like_teacher(text: str) -> str:
     prompt = f"""
-Tum ek friendly Indian teacher ho.
-PDF ke content ko simple Hinglish me samjhao.
-Bilkul aise jaise student ke saamne baithe ho.
+Tum ek real Indian teacher ho jo student ke saamne khade hoke
+samjha raha hai.
 
-Content:
+IMPORTANT RULES (strict):
+- Sirf Hinglish (Hindi + English mix) use karo
+- Pure Hindi ya pure English bilkul mat likhna
+- Bullet points, numbering, headings mat banana
+- Aisa likho jaise bol rahe ho, notes jaise nahi
+- Short sentences
+- Friendly tone: "dekho", "samjho", "maan lo", "simple si baat hai"
+
+Example style:
+"Dekho, Election Commission ka kaam hota hai elections conduct karwana.
+Iske liye voter ID use hota hai, jisme tumhari details hoti hain."
+
+Ab ye content samjhao (spoken style me):
+
 {text}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Friendly Indian teacher"},
+            {
+                "role": "system",
+                "content": "You explain like a real Indian teacher speaking to a student in Hinglish."
+            },
             {"role": "user", "content": prompt}
         ],
-        temperature=0.7
+        temperature=0.8
     )
 
     return response.choices[0].message.content.strip()
+
 
 # =========================
 # PDF UPLOAD
