@@ -100,15 +100,39 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     with pdfplumber.open(file.file) as pdf:
         for page in pdf.pages:
-            page_text = page.extract_text()
-            if page_text:
-                extracted_text += page_text + "\n"
+            text = page.extract_text()
+            if text:
+                extracted_text += text + "\n"
 
-    if not extracted_text.strip():
-        return {
-            "status": "error",
-            "message": "No readable text found in PDF"
-        }
+    # ---- SAFE CHUNKING LOGIC ----
+    MAX_CHARS = 700
+    chunks = [
+        extracted_text[i:i + MAX_CHARS]
+        for i in range(0, len(extracted_text), MAX_CHARS)
+    ]
+
+    explanations = []
+
+    # max 5 chunks = backend safe + fast
+    for chunk in chunks[:5]:
+        try:
+            exp = explain_like_teacher(chunk)
+            explanations.append(exp)
+        except Exception as e:
+            print("AI error:", e)
+
+    final_explanation = "\n\n".join(explanations)
+
+    # ---- VOICE ----
+    audio_file = f"audio_{uuid.uuid4()}.mp3"
+    await text_to_speech(final_explanation, audio_file)
+
+    return {
+        "status": "success",
+        "explanation": final_explanation,
+        "audio_url": f"/audio/{audio_file}"
+    }
+
 
     # Limit text for speed (Render friendly)
     explanation = explain_like_teacher(extracted_text[:1200])
