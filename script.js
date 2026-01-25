@@ -86,3 +86,29 @@ async function uploadPDF() {
       "❌ Backend error (server sleeping ya PDF zyada bada)";
   }
 }
+let utterance;
+
+function playVoice() {
+  const text = document.getElementById("explanation").innerText;
+  if (!text) return;
+
+  window.speechSynthesis.cancel();
+  utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-IN";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function pauseSpeech() {
+  window.speechSynthesis.pause();
+}
+
+function resumeSpeech() {
+  window.speechSynthesis.resume();
+}
+
+function stopSpeech() {
+  window.speechSynthesis.cancel();
+}
