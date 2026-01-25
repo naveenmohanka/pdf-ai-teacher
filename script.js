@@ -1,4 +1,4 @@
-const BACKEND_URL = https://pdf-ai-teacher.onrender.com;
+const BACKEND_URL = "https://pdf-ai-teacher.onrender.com";
 
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
