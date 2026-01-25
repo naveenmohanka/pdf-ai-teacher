@@ -1,12 +1,12 @@
 const BACKEND_URL = https://pdf-ai-teacher.onrender.com;
 
-async function uploadPDF() async function uploadPDF() {
+async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
   const audioPlayer = document.getElementById("audioPlayer");
 
   if (!fileInput.files.length) {
-    alert("Please select a PDF");
+    alert("Please select a PDF file");
     return;
   }
 
@@ -16,7 +16,7 @@ async function uploadPDF() async function uploadPDF() {
   explanationBox.innerText = "⏳ Processing... please wait";
 
   try {
-    const response = await fetch(`${BACKEND_URL}/upload-pdf`, {
+    const response = await fetch(BACKEND_URL + "/upload-pdf", {
       method: "POST",
       body: formData
     });
@@ -27,8 +27,8 @@ async function uploadPDF() async function uploadPDF() {
 
     const data = await response.json();
 
-    explanationBox.innerText = data.explanation;
-    audioPlayer.src = `${BACKEND_URL}${data.audio_url}`;
+    explanationBox.innerText = data.explanation || "No explanation received";
+    audioPlayer.src = BACKEND_URL + data.audio_url;
     audioPlayer.load();
 
   } catch (error) {
@@ -36,4 +36,3 @@ async function uploadPDF() async function uploadPDF() {
     console.error(error);
   }
 }
-
