@@ -11,13 +11,7 @@
 
   <div class="upload-box">
     <input type="file" id="pdfFile" />
-    <button onclick="speakText(document.getElementById('explanation').innerText)">
-▶ Play
-</button>
-<button onclick="pauseSpeech()">⏸ Pause</button>
-<button onclick="resumeSpeech()">▶ Resume</button>
-<button onclick="stopSpeech()">⏹ Stop</button>
-
+    <button onclick="uploadPDF()">Upload & Explain</button>
   </div>
 
   <div id="loader" class="loader hidden">
@@ -26,37 +20,33 @@
 
   <h2>Explanation</h2>
   <div id="explanation" class="explanation"></div>
+
   <!-- Progress Bar -->
-<div id="progressContainer" style="margin-top:15px; display:none;">
-  <div style="font-size:14px;margin-bottom:5px;">
-    📊 Progress: <span id="progressText">0%</span>
-  </div>
-  <div style="width:100%; background:#e5e7eb; border-radius:6px;">
-    <div id="progressBar"
-         style="width:0%; height:10px; background:#4f46e5; border-radius:6px;">
+  <div id="progressContainer" style="margin-top:15px; display:none;">
+    <div style="font-size:14px;margin-bottom:5px;">
+      📊 Progress: <span id="progressText">0%</span>
+    </div>
+    <div style="width:100%; background:#e5e7eb; border-radius:6px;">
+      <div id="progressBar"
+           style="width:0%; height:10px; background:#4f46e5; border-radius:6px;">
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Next Page Button -->
-<button id="nextBtn"
-        onclick="loadNextPage()"
-        style="margin-top:15px; display:none;">
-  👉 Next Page Explain
-</button>
+  <!-- Next Page Button -->
+  <button id="nextBtn"
+          onclick="loadNextPage()"
+          style="margin-top:15px; display:none;">
+    👉 Next Page Explain
+  </button>
 
-
- <h2>Voice</h2>
+  <h2>Voice</h2>
   <div id="voiceControls">
-  <button onclick="playVoice()">▶ Play</button>
-  <button onclick="pauseSpeech()">⏸ Pause</button>
-  <button onclick="resumeSpeech()">▶ Resume</button>
-  <button onclick="stopSpeech()">⏹ Stop</button>
-</div>
-
-<div class="voice-box">
-  <audio id="audioPlayer" controls></audio>
-</div>
+    <button onclick="playVoice()">▶ Play</button>
+    <button onclick="pauseSpeech()">⏸ Pause</button>
+    <button onclick="resumeSpeech()">▶ Resume</button>
+    <button onclick="stopSpeech()">⏹ Stop</button>
+  </div>
 
   <script src="script.js"></script>
 </body>
