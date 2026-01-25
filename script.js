@@ -14,6 +14,7 @@ async function uploadPDF() {
   formData.append("file", fileInput.files[0]);
 
   explanationDiv.innerText = "⏳ Explaining PDF...";
+  audioPlayer.style.display = "none";
 
   try {
     const response = await fetch(`${BACKEND_URL}/upload-pdf`, {
@@ -21,16 +22,12 @@ async function uploadPDF() {
       body: formData
     });
 
-    if (!response.ok) {
-      throw new Error("Backend error");
-    }
-
     const data = await response.json();
 
     explanationDiv.innerText = data.explanation || "No explanation received";
 
-    if (data.audio_url) {
-      audioPlayer.src = data.audio_url;
+    if (data.audio_file) {
+      audioPlayer.src = `${BACKEND_URL}/audio/${data.audio_file}`;
       audioPlayer.style.display = "block";
     }
 
