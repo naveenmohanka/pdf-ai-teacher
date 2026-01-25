@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import os
@@ -9,6 +9,9 @@ from openai import OpenAI
 # =========================
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+MAX_PAGES_PER_CALL = 1     # 🔥 ek request me sirf 1 page
+MAX_CHARS = 900            # 🔥 safe token limit
+
 # =========================
 # APP INIT
 # =========================
@@ -17,7 +20,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://naveenmohanka.github.io"],
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -26,29 +30,39 @@ app.add_middleware(
 # =========================
 @app.get("/")
 def home():
-    return {"message": "PDF AI Teacher backend running"}
+    return {"message": "PDF AI Teacher backend running (page-wise)"}
 
 # =========================
-# AI EXPLANATION
+# AI EXPLANATION (DO NOT TOUCH STYLE)
 # =========================
 def explain_like_teacher(text: str) -> str:
     prompt = f"""
-Tum ek real Indian teacher ho jo bolke samjha raha hai.
+Tum ek real Indian teacher ho jo student ke saamne khade hoke
+samjha raha hai.
 
-Rules:
-- Sirf Hinglish
-- Notes jaise mat likhna
-- Bullet / numbering nahi
-- Friendly spoken tone
+IMPORTANT RULES (strict):
+- Sirf Hinglish (Hindi + English mix)
+- Notes / bullet / heading bilkul nahi
+- Bolne jaisa natural flow
+- Friendly words: dekho, samjho, arre bhai, simple si baat hai
+- Short sentences
+- Human tone (AI jaisa nahi)
 
-Text:
+Example:
+"Dekho, Election Commission ka kaam hota hai elections conduct karwana..."
+
+Ab ye content samjhao (spoken style me):
+
 {text}
 """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You explain like a real Indian teacher in Hinglish"},
+            {
+                "role": "system",
+                "content": "You are a friendly Indian teacher speaking naturally in Hinglish."
+            },
             {"role": "user", "content": prompt}
         ],
         temperature=0.8
@@ -57,42 +71,46 @@ Text:
     return response.choices[0].message.content.strip()
 
 # =========================
-# PDF UPLOAD (PAGE BATCHING)
+# PDF UPLOAD (PAGE-WISE)
 # =========================
 @app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
-    extracted_text = ""
-
-    MAX_PAGES = 4        # 🔥 safe for Render
-    MAX_CHARS = 550     # 🔥 safe chunk
-
+async def upload_pdf(
+    file: UploadFile = File(...),
+    start_page: int = Query(0)
+):
     with pdfplumber.open(file.file) as pdf:
-        for i, page in enumerate(pdf.pages):
-            if i >= MAX_PAGES:
-                break
-            text = page.extract_text()
-            if text:
-                extracted_text += text + "\n"
+        total_pages = len(pdf.pages)
+
+        # 🔚 agar sab pages ho gaye
+        if start_page >= total_pages:
+            return {
+                "status": "done",
+                "message": "PDF complete"
+            }
+
+        extracted_text = ""
+
+        end_page = min(start_page + MAX_PAGES_PER_CALL, total_pages)
+
+        for i in range(start_page, end_page):
+            page_text = pdf.pages[i].extract_text()
+            if page_text:
+                extracted_text += page_text + "\n"
 
     if not extracted_text.strip():
         return {
             "status": "error",
-            "explanation": "PDF se text read nahi ho pa raha"
+            "explanation": "Is page se readable text nahi mila"
         }
 
-    chunks = [
-        extracted_text[i:i + MAX_CHARS]
-        for i in range(0, len(extracted_text), MAX_CHARS)
-    ]
+    # 🔥 hard safety cut
+    extracted_text = extracted_text[:MAX_CHARS]
 
-    explanations = []
-
-    for chunk in chunks[:2]:   # 🔥 ONLY 2 chunks (very important)
-        explanations.append(explain_like_teacher(chunk))
-
-    final_explanation = "\n\n".join(explanations)
+    explanation = explain_like_teacher(extracted_text)
 
     return {
         "status": "success",
-        "explanation": final_explanation
+        "explanation": explanation,
+        "next_page": end_page,
+        "total_pages": total_pages
     }
