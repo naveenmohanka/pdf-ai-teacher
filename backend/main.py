@@ -91,26 +91,41 @@ Ab ye content samjhao (spoken style me):
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     extracted_text = ""
+    MAX_PAGES = 6        # 🔥 PDF page limit (very important)
+    MAX_CHARS = 600     # 🔥 per chunk safe size
 
+    # 1️⃣ Extract LIMITED pages only
     with pdfplumber.open(file.file) as pdf:
-        for page in pdf.pages:
+        for i, page in enumerate(pdf.pages):
+            if i >= MAX_PAGES:
+                break
             text = page.extract_text()
             if text:
                 extracted_text += text + "\n"
 
-    # 🔥 SAFE LIMIT FOR BIG PDFs
-    MAX_CHARS = 700
+    if not extracted_text.strip():
+        return {
+            "status": "error",
+            "explanation": "PDF se text read nahi ho pa raha",
+            "audio_url": None
+        }
+
+    # 2️⃣ Chunking
     chunks = [
         extracted_text[i:i + MAX_CHARS]
         for i in range(0, len(extracted_text), MAX_CHARS)
     ]
 
     explanations = []
-    for chunk in chunks[:3]:   # max 3 chunks only
+
+    # 🔥 max 3 chunks only
+    for chunk in chunks[:3]:
         explanations.append(explain_like_teacher(chunk))
 
     final_explanation = "\n\n".join(explanations)
-    final_explanation = final_explanation[:1500]
+
+    # 🔥 HARD LIMIT for safety
+    final_explanation = final_explanation[:1200]
 
     return {
         "status": "success",
