@@ -102,3 +102,41 @@ function updateProgress() {
   progressBar.style.width = percent + "%";
   progressText.innerText = percent + "%";
 }
+let utterance;
+let selectedVoice = null;
+let lastExplanation = "";
+
+function loadVoices() {
+  const voices = window.speechSynthesis.getVoices();
+  selectedVoice =
+    voices.find(v => v.lang === "en-IN") ||
+    voices.find(v => v.lang.includes("en")) ||
+    voices[0];
+}
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices(); // 🔥 MUST
+
+function playVoice() {
+  if (!lastExplanation) return;
+
+  window.speechSynthesis.cancel();
+  utterance = new SpeechSynthesisUtterance(lastExplanation);
+  utterance.voice = selectedVoice;
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function pauseSpeech() {
+  window.speechSynthesis.pause();
+}
+
+function resumeSpeech() {
+  window.speechSynthesis.resume();
+}
+
+function stopSpeech() {
+  window.speechSynthesis.cancel();
+}
