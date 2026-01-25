@@ -2,7 +2,7 @@ const BACKEND_URL = "https://pdf-ai-teacher.onrender.com";
 
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
-  const explanationBox = document.getElementById("explanation");
+  const explanationDiv = document.getElementById("explanation");
   const audioPlayer = document.getElementById("audioPlayer");
 
   if (!fileInput.files.length) {
@@ -13,10 +13,10 @@ async function uploadPDF() {
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
-  explanationBox.innerText = "⏳ Processing... please wait";
+  explanationDiv.innerText = "⏳ Explaining PDF...";
 
   try {
-    const response = await fetch(BACKEND_URL + "/upload-pdf", {
+    const response = await fetch(`${BACKEND_URL}/upload-pdf`, {
       method: "POST",
       body: formData
     });
@@ -27,12 +27,15 @@ async function uploadPDF() {
 
     const data = await response.json();
 
-    explanationBox.innerText = data.explanation || "No explanation received";
-    audioPlayer.src = BACKEND_URL + data.audio_url;
-    audioPlayer.load();
+    explanationDiv.innerText = data.explanation || "No explanation received";
 
-  } catch (error) {
-    explanationBox.innerText = "❌ Error connecting to backend";
-    console.error(error);
+    if (data.audio_url) {
+      audioPlayer.src = data.audio_url;
+      audioPlayer.style.display = "block";
+    }
+
+  } catch (err) {
+    console.error(err);
+    explanationDiv.innerText = "❌ Error connecting to backend";
   }
 }
