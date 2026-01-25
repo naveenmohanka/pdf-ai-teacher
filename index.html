@@ -11,7 +11,12 @@
 
   <div class="upload-box">
     <input type="file" id="pdfFile" />
-    <button onclick="uploadPDF()">Upload & Explain</button>
+    <button onclick="speakText(document.getElementById('explanation').innerText)">
+▶ Play
+</button>
+<button onclick="pauseSpeech()">⏸ Pause</button>
+<button onclick="resumeSpeech()">▶ Resume</button>
+<button onclick="stopSpeech()">⏹ Stop</button>
 
   </div>
 
