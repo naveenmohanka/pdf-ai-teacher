@@ -23,14 +23,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://naveenmohanka.github.io",
-        "https://naveenmohanka.github.io/pdf-ai-teacher",
-    ],
+    allow_origins=["*"],   # 🔥 IMPORTANT
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # =========================
 # ROOT
