@@ -89,49 +89,46 @@ async def text_to_speech(text: str, filepath: str):
 # PDF UPLOAD
 # =========================
 @app.post("/upload-pdf")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    start_page: int = 0
+):
     extracted_text = ""
-    MAX_PAGES = 6
-    MAX_CHARS = 600
+    PAGES_PER_REQUEST = 2     # 🔥 VERY IMPORTANT
+    MAX_CHARS = 800
 
-    # 1️⃣ Extract limited pages
     with pdfplumber.open(file.file) as pdf:
-        for i, page in enumerate(pdf.pages):
-            if i >= MAX_PAGES:
-                break
-            text = page.extract_text()
+        end_page = min(start_page + PAGES_PER_REQUEST, len(pdf.pages))
+
+        for i in range(start_page, end_page):
+            text = pdf.pages[i].extract_text()
             if text:
                 extracted_text += text + "\n"
 
     if not extracted_text.strip():
         return {
-            "status": "error",
-            "explanation": "PDF se text read nahi ho pa raha",
-            "audio_url": None
+            "status": "done",
+            "explanation": "",
+            "next_page": None
         }
 
-    # 2️⃣ Chunking
+    # chunking
     chunks = [
         extracted_text[i:i + MAX_CHARS]
         for i in range(0, len(extracted_text), MAX_CHARS)
     ]
 
     explanations = []
-    for chunk in chunks[:3]:
+    for chunk in chunks[:2]:   # 🔥 safe
         explanations.append(explain_like_teacher(chunk))
 
     final_explanation = "\n\n".join(explanations)
-    final_explanation = final_explanation[:1200]  # HARD LIMIT
-
-    # 3️⃣ Voice
-    audio_filename = f"{uuid.uuid4()}.mp3"
-    audio_path = os.path.join(AUDIO_DIR, audio_filename)
-    await text_to_speech(final_explanation, audio_path)
+    final_explanation = final_explanation[:1200]
 
     return {
         "status": "success",
         "explanation": final_explanation,
-        "audio_url": f"/audio/{audio_filename}"
+        "next_page": end_page
     }
 
 # =========================
