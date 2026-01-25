@@ -40,12 +40,13 @@ async function uploadPDF() {
 
     // ✅ AUDIO
     if (data.audio_url) {
-     audioPlayer.src = backendUrl + data.audio_url;
+    audioPlayer.src = backendUrl + data.audio_url;
 audioPlayer.load();
 
 setTimeout(() => {
   audioPlayer.play().catch(() => {});
 }, 500);
+
   
     }
 
