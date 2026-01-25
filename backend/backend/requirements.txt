@@ -2,5 +2,4 @@ fastapi
 uvicorn
 pdfplumber
 python-multipart
-
-Update backend dependencies
+openai
