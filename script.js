@@ -1,68 +1,56 @@
-let currentUtterance = null;
+const backendUrl = "https://pdf-ai-teacher.onrender.com";
 
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
+  const audioPlayer = document.getElementById("audioPlayer");
+  const loader = document.getElementById("loader");
 
-  if (!fileInput.files.length) {
-    alert("Please select a PDF");
+  // safety reset
+  explanationBox.innerText = "";
+  audioPlayer.pause();
+  audioPlayer.src = "";
+
+  if (!fileInput || fileInput.files.length === 0) {
+    alert("Please select a PDF file");
     return;
   }
 
-  explanationBox.innerText = "🤖 AI teacher samjha raha hai...";
+  // show loader
+  if (loader) loader.classList.remove("hidden");
+  explanationBox.innerText = "⏳ AI teacher samjha raha hai...";
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
-    const response = await fetch(
-      "https://pdf-ai-teacher.onrender.com/upload-pdf",
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+    const response = await fetch(`${backendUrl}/upload-pdf`, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error("Server error");
+    }
 
     const data = await response.json();
-    explanationBox.innerText = data.explanation;
 
-    // 🔥 voice automatically start NAHI karega
-    document.getElementById("speakBtn").disabled = false;
+    // hide loader
+    if (loader) loader.classList.add("hidden");
 
-  } catch (err) {
-    console.error(err);
-    explanationBox.innerText = "❌ Backend error (server waking up?)";
+    // explanation
+    explanationBox.innerText = data.explanation || "❌ Explanation nahi aa paya";
+
+    // audio (IMPORTANT PART)
+    if (data.audio_url) {
+      audioPlayer.src = backendUrl + data.audio_url;
+      audioPlayer.load(); 
+      // ⚠️ auto play nahi — user play karega
+    }
+
+  } catch (error) {
+    console.error(error);
+    if (loader) loader.classList.add("hidden");
+    explanationBox.innerText = "❌ Backend error (server sleeping ya PDF bahut bada ho sakta hai)";
   }
-}
-
-// =========================
-// VOICE CONTROLS
-// =========================
-function playVoice() {
-  stopVoice();
-
-  const text = document.getElementById("explanation").innerText;
-  currentUtterance = new SpeechSynthesisUtterance(text);
-
-  currentUtterance.lang = "en-IN";
-  currentUtterance.rate = 0.95;
-  currentUtterance.pitch = 1;
-
-  speechSynthesis.speak(currentUtterance);
-}
-
-function pauseVoice() {
-  if (speechSynthesis.speaking) {
-    speechSynthesis.pause();
-  }
-}
-
-function resumeVoice() {
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
-  }
-}
-
-function stopVoice() {
-  speechSynthesis.cancel();
 }
