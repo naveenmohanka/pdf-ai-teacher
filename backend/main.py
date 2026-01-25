@@ -16,6 +16,19 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
+    from fastapi.responses import Response
+
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "https://naveenmohanka.github.io",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
     allow_origins=[
         "https://naveenmohanka.github.io"
     ],
