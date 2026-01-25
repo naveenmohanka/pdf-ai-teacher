@@ -16,10 +16,14 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # GitHub Pages safe
-    allow_methods=["*"],
+    allow_origins=[
+        "https://naveenmohanka.github.io"
+    ],
+    allow_credentials=False,
+    allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["*"],
 )
+
 
 # =========================
 # ROOT
