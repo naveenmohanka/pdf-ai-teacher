@@ -1,21 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>PDF AI Teacher</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <h2>📘 PDF AI Teacher</h2>
+  <h1>📘 PDF AI Teacher</h1>
 
-  <input type="file" id="pdfFile" accept=".pdf" />
-  <button onclick="uploadPDF()">Upload & Explain</button>
+  <div class="upload-box">
+    <input type="file" id="pdfFile" />
+    <button onclick="uploadPDF()">Upload & Explain</button>
+  </div>
 
-  <h3>Explanation</h3>
-  <pre id="explanation"></pre>
+  <div id="loader" class="loader hidden">
+    🤖 AI teacher samjha raha hai...
+  </div>
 
-  <h3>Voice</h3>
-  <audio id="audioPlayer" controls style="display:none"></audio>
+  <h2>Explanation</h2>
+  <div id="explanation" class="explanation"></div>
+
+  <h2>Voice</h2>
+  <div class="voice-box">
+    <div id="voiceWave" class="wave hidden"></div>
+    <audio id="audioPlayer" controls></audio>
+  </div>
 
   <script src="script.js"></script>
 </body>
