@@ -24,10 +24,14 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # frontend ke liye
+    allow_origins=[
+        "https://naveenmohanka.github.io"
+    ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # =========================
 # ROOT
