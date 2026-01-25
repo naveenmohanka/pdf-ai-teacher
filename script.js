@@ -74,7 +74,7 @@ async function uploadPDF() {
     explanationBox.innerText += "\n\n" + data.explanation;
 
     // 🔊 AUTO SPEAK (best part)
-    speakText(data.explanation);
+   
 
     // pagination (future ready)
     if (data.next_page !== undefined) {
