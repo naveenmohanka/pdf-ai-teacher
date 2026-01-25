@@ -1,3 +1,5 @@
+let currentUtterance = null;
+
 async function uploadPDF() {
   const fileInput = document.getElementById("pdfFile");
   const explanationBox = document.getElementById("explanation");
@@ -24,8 +26,8 @@ async function uploadPDF() {
     const data = await response.json();
     explanationBox.innerText = data.explanation;
 
-    // 🔥 BROWSER VOICE
-    speakLikeTeacher(data.explanation);
+    // 🔥 voice automatically start NAHI karega
+    document.getElementById("speakBtn").disabled = false;
 
   } catch (err) {
     console.error(err);
@@ -34,15 +36,33 @@ async function uploadPDF() {
 }
 
 // =========================
-// VOICE FUNCTION
+// VOICE CONTROLS
 // =========================
-function speakLikeTeacher(text) {
+function playVoice() {
+  stopVoice();
+
+  const text = document.getElementById("explanation").innerText;
+  currentUtterance = new SpeechSynthesisUtterance(text);
+
+  currentUtterance.lang = "en-IN";
+  currentUtterance.rate = 0.95;
+  currentUtterance.pitch = 1;
+
+  speechSynthesis.speak(currentUtterance);
+}
+
+function pauseVoice() {
+  if (speechSynthesis.speaking) {
+    speechSynthesis.pause();
+  }
+}
+
+function resumeVoice() {
+  if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+  }
+}
+
+function stopVoice() {
   speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-IN";
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-
-  speechSynthesis.speak(utterance);
 }
