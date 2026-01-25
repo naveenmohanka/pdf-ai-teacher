@@ -76,14 +76,15 @@ async def text_to_speech(text: str, filepath: str):
 async def upload_pdf(file: UploadFile = File(...)):
     extracted_text = ""
 
+    # 1️⃣ Extract text from PDF
     with pdfplumber.open(file.file) as pdf:
         for page in pdf.pages:
-            txt = page.extract_text()
-            if txt:
-                extracted_text += txt + "\n"
+            text = page.extract_text()
+            if text:
+                extracted_text += text + "\n"
 
-    # ---- SAFE CHUNKING (50 pages friendly) ----
-    MAX_CHARS = 800
+    # 2️⃣ SAFE LIMITS FOR BIG PDF
+    MAX_CHARS = 700
     chunks = [
         extracted_text[i:i + MAX_CHARS]
         for i in range(0, len(extracted_text), MAX_CHARS)
@@ -91,10 +92,24 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     explanations = []
 
-    for chunk in chunks[:6]:   # limit for Render safety
+    for chunk in chunks[:3]:   # 🔥 max 3 chunks only
         explanations.append(explain_like_teacher(chunk))
 
     final_explanation = "\n\n".join(explanations)
+
+    # 🔥 limit audio length (VERY IMPORTANT)
+    final_explanation = final_explanation[:1500]
+
+    # 3️⃣ Generate voice
+    audio_file = f"audio_{uuid.uuid4()}.mp3"
+    await text_to_speech(final_explanation, audio_file)
+
+    return {
+        "status": "success",
+        "explanation": final_explanation,
+        "audio_url": f"/audio/{audio_file}"
+    }
+
 
     # ---- AUDIO ----
     audio_filename = f"{uuid.uuid4()}.mp3"
