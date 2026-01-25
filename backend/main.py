@@ -23,12 +23,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # 🔥 IMPORTANT
+    allow_origins=["*"],   # 🔥 debug phase
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # =========================
 # ROOT
@@ -44,9 +43,14 @@ def explain_like_teacher(text: str) -> str:
     prompt = f"""
 Tum ek friendly Indian teacher ho.
 
-Neeche diye gaye content ko simple Hinglish me samjhao.
-Bilkul aise jaise tum student se baat kar rahe ho.
-Examples use karo.
+Neeche diye gaye content ko bilkul simple Hinglish me samjhao,
+jaise tum student se directly baat kar rahe ho.
+
+Rules:
+- Hindi + English mix
+- Short paragraphs
+- Easy examples
+- Casual teacher tone
 
 Content:
 {text}
@@ -55,7 +59,7 @@ Content:
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "Friendly Indian teacher"},
+            {"role": "system", "content": "Friendly Indian teacher explaining in Hinglish"},
             {"role": "user", "content": prompt}
         ],
         temperature=0.7
@@ -68,7 +72,12 @@ Content:
 # =========================
 async def text_to_speech(text: str, filepath: str):
     voice = "en-IN-NeerjaNeural"
-    communicate = edge_tts.Communicate(text, voice)
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=voice,
+        rate="+0%",
+        pitch="+0Hz"
+    )
     await communicate.save(filepath)
 
 # =========================
@@ -78,15 +87,17 @@ async def text_to_speech(text: str, filepath: str):
 async def upload_pdf(file: UploadFile = File(...)):
     extracted_text = ""
 
-    # 1️⃣ Extract text from PDF
+    # 1️⃣ Extract text
     with pdfplumber.open(file.file) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
             if text:
                 extracted_text += text + "\n"
 
-    # 2️⃣ SAFE LIMITS FOR BIG PDF
-    MAX_CHARS = 700
+    # 2️⃣ SAFE LIMITS (BIG PDF FRIENDLY)
+    MAX_CHARS = 600
+    MAX_CHUNKS = 3   # 🔥 hard limit (Render safe)
+
     chunks = [
         extracted_text[i:i + MAX_CHARS]
         for i in range(0, len(extracted_text), MAX_CHARS)
@@ -94,26 +105,15 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     explanations = []
 
-    for chunk in chunks[:3]:   # 🔥 max 3 chunks only
+    for chunk in chunks[:MAX_CHUNKS]:
         explanations.append(explain_like_teacher(chunk))
 
     final_explanation = "\n\n".join(explanations)
 
-    # 🔥 limit audio length (VERY IMPORTANT)
-    final_explanation = final_explanation[:1500]
+    # 🔥 audio safe length
+    final_explanation = final_explanation[:1200]
 
-    # 3️⃣ Generate voice
-    audio_file = f"audio_{uuid.uuid4()}.mp3"
-    await text_to_speech(final_explanation, audio_file)
-
-    return {
-        "status": "success",
-        "explanation": final_explanation,
-        "audio_url": f"/audio/{audio_file}"
-    }
-
-
-    # ---- AUDIO ----
+    # 3️⃣ Generate voice (CORRECT PATH)
     audio_filename = f"{uuid.uuid4()}.mp3"
     audio_path = os.path.join(AUDIO_DIR, audio_filename)
 
@@ -131,4 +131,8 @@ async def upload_pdf(file: UploadFile = File(...)):
 @app.get("/audio/{audio_file}")
 def get_audio(audio_file: str):
     file_path = os.path.join(AUDIO_DIR, audio_file)
+
+    if not os.path.exists(file_path):
+        return {"error": "Audio file not found"}
+
     return FileResponse(file_path, media_type="audio/mpeg")
