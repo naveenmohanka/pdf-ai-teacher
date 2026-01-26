@@ -18,12 +18,18 @@
 <div id="progressContainer" style="display:none; margin-top:10px;">
   📊 Progress: <span id="progressText">0%</span>
   <div style="background:#ddd; border-radius:5px;">
-    <div id="progressBar" style="height:8px;width:0%;background:#4f46e5"></div>
+    <div id="progressBar"
+         style="height:8px;width:0%;background:#4f46e5"></div>
   </div>
 </div>
 
+<!-- 🔥 NEXT PAGE BUTTON (INSIDE BODY) -->
+<button id="nextBtn" onclick="loadNextPage()" style="margin-top:15px;">
+  👉 Next Page
+</button>
+
 <h2>Voice</h2>
-<button onclick="playVoice()">▶ Play</button>
+<button onclick="playText()">▶ Play</button>
 <button onclick="pauseSpeech()">⏸ Pause</button>
 <button onclick="resumeSpeech()">▶ Resume</button>
 <button onclick="stopSpeech()">⏹ Stop</button>
@@ -31,7 +37,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-<button id="nextBtn" onclick="loadNextPage()">
-  👉 Next Page
-</button>
-
