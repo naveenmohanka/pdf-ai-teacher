@@ -61,6 +61,13 @@ async function loadNextPage() {
     audioPlayer.onended = () => {
       currentPage = data.next_page;
       loadNextPage();
+      const gender = document.getElementById("voiceGender").value;
+
+const response = await fetch(
+  `${backendUrl}/upload-pdf?start_page=${currentPage}&gender=${gender}`,
+  { method: "POST", body: formData }
+);
+
     };
 
     totalPages = data.total_pages;
