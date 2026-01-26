@@ -9,7 +9,6 @@ let lastExplanation = "";
 let utterance = null;
 let selectedVoice = null;
 
-// 🔥 AUTO FEATURES
 let autoNextEnabled = true;
 let autoVoiceEnabled = true;
 
@@ -23,7 +22,7 @@ const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
 
 /* =========================
-   🔊 VOICE SETUP (BEST HINGLISH)
+   🔊 VOICE SETUP
 ========================= */
 function loadVoices() {
   const voices = window.speechSynthesis.getVoices();
@@ -32,41 +31,38 @@ function loadVoices() {
     voices.find(v => v.lang.includes("en")) ||
     voices[0];
 }
-
 window.speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
 /* =========================
-   🔊 VOICE CONTROLS
+   🔊 VOICE WITH HIGHLIGHT
 ========================= */
 function playVoice() {
   if (!lastExplanation) return;
 
   window.speechSynthesis.cancel();
 
-  explanationBox.innerHTML = ""; // reset
-
-  // split text into words
+  const container = document.createElement("div");
   const words = lastExplanation.split(" ");
   let index = 0;
 
-  // render spans
   words.forEach(word => {
     const span = document.createElement("span");
-    span.innerText = word + " ";
-    span.classList.add("word");
-    explanationBox.appendChild(span);
+    span.textContent = word + " ";
+    span.className = "word";
+    container.appendChild(span);
   });
 
-  const spans = document.querySelectorAll(".word");
+  explanationBox.appendChild(container);
+  const spans = container.querySelectorAll(".word");
 
   utterance = new SpeechSynthesisUtterance(lastExplanation);
   utterance.voice = selectedVoice;
   utterance.rate = 0.85;
   utterance.pitch = 1;
 
-  utterance.onboundary = (event) => {
-    if (event.name === "word" && spans[index]) {
+  utterance.onboundary = (e) => {
+    if (e.name === "word" && spans[index]) {
       spans.forEach(s => s.classList.remove("highlight"));
       spans[index].classList.add("highlight");
       index++;
@@ -83,17 +79,12 @@ function playVoice() {
   window.speechSynthesis.speak(utterance);
 }
 
-  window.speechSynthesis.speak(utterance);
-}
-
 function pauseSpeech() {
   window.speechSynthesis.pause();
 }
-
 function resumeSpeech() {
   window.speechSynthesis.resume();
 }
-
 function stopSpeech() {
   window.speechSynthesis.cancel();
 }
@@ -105,9 +96,7 @@ async function uploadPDF() {
   currentPage = 0;
   totalPages = null;
   explanationBox.innerText = "";
-  nextBtn.style.display = "none";
   progressContainer.style.display = "none";
-
   await loadNextPage();
 }
 
@@ -116,16 +105,11 @@ async function loadNextPage() {
   isLoading = true;
 
   const fileInput = document.getElementById("pdfFile");
-
   if (!fileInput.files.length) {
     alert("PDF select karo");
     isLoading = false;
     return;
   }
-
-  const pageHeader = `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
-explanationBox.innerText += pageHeader + data.explanation;
-
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
@@ -133,62 +117,39 @@ explanationBox.innerText += pageHeader + data.explanation;
   try {
     const response = await fetch(
       `${backendUrl}/upload-pdf?start_page=${currentPage}`,
-      {
-        method: "POST",
-        body: formData
-      }
+      { method: "POST", body: formData }
     );
 
     const data = await response.json();
 
-    // 🔚 PDF COMPLETE
     if (data.status === "done") {
       explanationBox.innerText += "\n\n✅ Poora PDF explain ho gaya.";
-      nextBtn.style.display = "none";
       isLoading = false;
       return;
     }
 
-    // ❌ ERROR
     if (data.status === "error") {
       explanationBox.innerText += "\n\n❌ " + data.explanation;
       isLoading = false;
       return;
     }
 
-    // ✅ SUCCESS
-    lastExplanation = data.explanation;               // 🔥 VERY IMPORTANT
-    explanationBox.innerText += "\n\n" + data.explanation;
+    // ✅ PAGE HEADER
+    explanationBox.innerText += `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
+
+    lastExplanation = data.explanation;
+    explanationBox.innerText += data.explanation;
 
     currentPage = data.next_page;
     totalPages = data.total_pages;
 
     updateProgress();
-     const audioPlayer = document.getElementById("audioPlayer");
-audioPlayer.src = backendUrl + data.audio_url;
-audioPlayer.load();
-
-// 🔥 AUTO PLAY (optional)
-audioPlayer.play();
-
-
     progressContainer.style.display = "block";
 
-    // Manual button sirf backup ke liye
-    if (!autoNextEnabled) {
-      nextBtn.style.display = "inline-block";
-    } else {
-      nextBtn.style.display = "none";
-    }
+    if (autoVoiceEnabled) playVoice();
 
-    // 🔊 AUTO VOICE
-    if (autoVoiceEnabled) {
-      playVoice();
-    }
-
-  } catch (e) {
-    explanationBox.innerText +=
-      "\n\n❌ Backend error (server sleeping ya PDF zyada bada)";
+  } catch {
+    explanationBox.innerText += "\n\n❌ Backend error";
   }
 
   isLoading = false;
@@ -199,12 +160,7 @@ audioPlayer.play();
 ========================= */
 function updateProgress() {
   if (!totalPages) return;
-
-  const percent = Math.min(
-    Math.round((currentPage / totalPages) * 100),
-    100
-  );
-
+  const percent = Math.round((currentPage / totalPages) * 100);
   progressBar.style.width = percent + "%";
   progressText.innerText = percent + "%";
 }
