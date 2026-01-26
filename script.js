@@ -164,6 +164,13 @@ explanationBox.innerText += pageHeader + data.explanation;
     totalPages = data.total_pages;
 
     updateProgress();
+     const audioPlayer = document.getElementById("audioPlayer");
+audioPlayer.src = backendUrl + data.audio_url;
+audioPlayer.load();
+
+// 🔥 AUTO PLAY (optional)
+audioPlayer.play();
+
 
     progressContainer.style.display = "block";
 
