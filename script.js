@@ -44,19 +44,44 @@ function playVoice() {
 
   window.speechSynthesis.cancel();
 
+  explanationBox.innerHTML = ""; // reset
+
+  // split text into words
+  const words = lastExplanation.split(" ");
+  let index = 0;
+
+  // render spans
+  words.forEach(word => {
+    const span = document.createElement("span");
+    span.innerText = word + " ";
+    span.classList.add("word");
+    explanationBox.appendChild(span);
+  });
+
+  const spans = document.querySelectorAll(".word");
+
   utterance = new SpeechSynthesisUtterance(lastExplanation);
   utterance.voice = selectedVoice;
-  utterance.rate = 0.85;   // 🧑‍🏫 teacher style
+  utterance.rate = 0.85;
   utterance.pitch = 1;
 
-  // 🔄 AUTO NEXT PAGE AFTER VOICE
-  utterance.onend = () => {
-    if (autoNextEnabled) {
-      setTimeout(() => {
-        loadNextPage();
-      }, 800);
+  utterance.onboundary = (event) => {
+    if (event.name === "word" && spans[index]) {
+      spans.forEach(s => s.classList.remove("highlight"));
+      spans[index].classList.add("highlight");
+      index++;
     }
   };
+
+  utterance.onend = () => {
+    spans.forEach(s => s.classList.remove("highlight"));
+    if (autoNextEnabled) {
+      setTimeout(loadNextPage, 800);
+    }
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
 
   window.speechSynthesis.speak(utterance);
 }
@@ -98,7 +123,9 @@ async function loadNextPage() {
     return;
   }
 
-  explanationBox.innerText += "\n\n⏳ Next page explain ho raha hai...";
+  const pageHeader = `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
+explanationBox.innerText += pageHeader + data.explanation;
+
 
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
