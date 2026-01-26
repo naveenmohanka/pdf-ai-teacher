@@ -1,9 +1,30 @@
 from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
+from fastapi.responses import FileResponse
+import edge_tts
+import uuid
+
+AUDIO_DIR = "audio"
+os.makedirs(AUDIO_DIR, exist_ok=True)
+
+async def generate_audio(text: str) -> str:
+    filename = f"{uuid.uuid4()}.mp3"
+    path = os.path.join(AUDIO_DIR, filename)
+
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice="en-IN-NeerjaNeural",  # 🔥 best Hinglish voice
+        rate="+0%",
+        pitch="+0Hz"
+    )
+    await communicate.save(path)
+    return filename
+
 import tempfile
 from pdfminer.pdfparser import PDFSyntaxError
 import os
+
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -87,12 +108,15 @@ async def upload_pdf(
         # 🔥 cleanup temp file
         os.remove(tmp_path)
 
-        return {
-            "status": "success",
-            "explanation": explanation,
-            "next_page": start_page + 1,
-            "total_pages": total_pages
-        }
+       audio_file = await generate_audio(explanation)
+
+return {
+    "status": "success",
+    "explanation": explanation,
+    "audio_url": f"/audio/{audio_file}",
+    "next_page": start_page + 1,
+    "total_pages": total_pages
+}
 
     except PDFSyntaxError:
         return {
@@ -105,3 +129,7 @@ async def upload_pdf(
             "status": "error",
             "explanation": f"PDF read error: {str(e)}"
         }
+@app.get("/audio/{filename}")
+def serve_audio(filename: str):
+    path = os.path.join(AUDIO_DIR, filename)
+    return FileResponse(path, media_type="audio/mpeg")
