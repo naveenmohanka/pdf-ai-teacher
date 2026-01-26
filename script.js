@@ -31,7 +31,7 @@ speechSynthesis.onvoiceschanged = loadVoices;
 loadVoices();
 
 /* =========================
-   🔊 VOICE CONTROLS (PER PAGE)
+   🔊 VOICE CONTROLS
 ========================= */
 function playText(text) {
   speechSynthesis.cancel();
@@ -45,11 +45,9 @@ function playText(text) {
 function pauseSpeech() {
   speechSynthesis.pause();
 }
-
 function resumeSpeech() {
   speechSynthesis.resume();
 }
-
 function stopSpeech() {
   speechSynthesis.cancel();
 }
@@ -86,31 +84,41 @@ async function loadNextPage() {
     );
     const data = await res.json();
 
+    // ✅ DONE
     if (data.status === "done") {
-  explanationBox.innerText += "\n\n✅ Poora PDF explain ho gaya.";
-  isLoading = false;        // 🔥 VERY IMPORTANT
-  return;
-}
-
-    if (data.status === "error") {
-      explanationBox.innerHTML += `<p>❌ ${data.explanation}</p>`;
+      explanationBox.innerHTML += `<p>✅ Poora PDF explain ho gaya.</p>`;
+      isLoading = false;
       return;
     }
 
-    // 🔥 PAGE BLOCK (SEPARATE)
+    // ❌ ERROR (FIXED)
+    if (data.status === "error") {
+      explanationBox.innerHTML += `<p>❌ ${data.explanation}</p>`;
+      isLoading = false;          // 🔥 VERY IMPORTANT
+      return;
+    }
+
+    // ✅ PAGE BLOCK
     const pageDiv = document.createElement("div");
     pageDiv.className = "page-block";
-    pageDiv.innerHTML = `
-      <h3>📄 Page ${currentPage + 1}</h3>
-      <p>${data.explanation}</p>
-      <div class="voice-controls">
-        <button onclick="playText(\`${data.explanation}\`)">▶ Play</button>
-        <button onclick="pauseSpeech()">⏸ Pause</button>
-        <button onclick="resumeSpeech()">▶ Resume</button>
-        <button onclick="stopSpeech()">⏹ Stop</button>
-      </div>
+
+    const textPara = document.createElement("p");
+    textPara.innerText = data.explanation;
+
+    const playBtn = document.createElement("button");
+    playBtn.innerText = "▶ Play";
+    playBtn.onclick = () => playText(data.explanation);
+
+    pageDiv.innerHTML = `<h3>📄 Page ${currentPage + 1}</h3>`;
+    pageDiv.appendChild(textPara);
+    pageDiv.appendChild(playBtn);
+    pageDiv.innerHTML += `
+      <button onclick="pauseSpeech()">⏸ Pause</button>
+      <button onclick="resumeSpeech()">▶ Resume</button>
+      <button onclick="stopSpeech()">⏹ Stop</button>
       <hr/>
     `;
+
     explanationBox.appendChild(pageDiv);
 
     currentPage = data.next_page;
@@ -120,6 +128,7 @@ async function loadNextPage() {
 
   } catch (e) {
     explanationBox.innerHTML += `<p>❌ Backend error</p>`;
+    isLoading = false;
   }
 
   isLoading = false;
