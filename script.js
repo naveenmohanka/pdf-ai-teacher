@@ -5,9 +5,6 @@ let currentPage = 0;
 let totalPages = null;
 let isLoading = false;
 
-let lastExplanation = "";
-let utterance = null;
-
 const backendUrl = "https://pdf-ai-teacher.onrender.com";
 
 // DOM
@@ -17,53 +14,12 @@ const progressText = document.getElementById("progressText");
 const progressContainer = document.getElementById("progressContainer");
 
 /* =========================
-   🔊 VOICE SETUP
-========================= */
-let selectedVoice = null;
-
-function loadVoices() {
-  const voices = speechSynthesis.getVoices();
-  selectedVoice =
-    voices.find(v => v.lang === "en-IN") ||
-    voices.find(v => v.lang.includes("en")) ||
-    voices[0];
-}
-speechSynthesis.onvoiceschanged = loadVoices;
-loadVoices();
-
-/* =========================
-   🔊 VOICE CONTROLS
-========================= */
-function playVoice() {
-  if (!lastExplanation) return;
-
-  speechSynthesis.cancel();
-
-  utterance = new SpeechSynthesisUtterance(lastExplanation);
-  utterance.voice = selectedVoice;
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-
-  speechSynthesis.speak(utterance);
-}
-
-function pauseSpeech() {
-  speechSynthesis.pause();
-}
-function resumeSpeech() {
-  speechSynthesis.resume();
-}
-function stopSpeech() {
-  speechSynthesis.cancel();
-}
-
-/* =========================
    📄 PDF FLOW
 ========================= */
 async function uploadPDF() {
   currentPage = 0;
   totalPages = null;
-  explanationBox.innerText = "";
+  explanationBox.innerHTML = "";
   progressContainer.style.display = "none";
   await loadNextPage();
 }
@@ -79,10 +35,13 @@ async function loadNextPage() {
     return;
   }
 
-  explanationBox.innerText += "\n\n⏳ AI teacher samjha raha hai...";
-
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
+
+  // loader (page-wise)
+  const loader = document.createElement("div");
+  loader.innerText = "⏳ AI teacher samjha raha hai...";
+  explanationBox.appendChild(loader);
 
   try {
     const res = await fetch(
@@ -91,44 +50,73 @@ async function loadNextPage() {
     );
     const data = await res.json();
 
+    loader.remove();
+
+    // PDF done
     if (data.status === "done") {
-      explanationBox.innerText += "\n\n✅ Poora PDF explain ho gaya.";
+      const done = document.createElement("div");
+      done.innerText = "✅ Poora PDF explain ho gaya.";
+      explanationBox.appendChild(done);
       return;
     }
 
+    // Error
     if (data.status === "error") {
-      explanationBox.innerText += "\n\n❌ " + data.explanation;
+      const err = document.createElement("div");
+      err.innerText = "❌ " + data.explanation;
+      explanationBox.appendChild(err);
       return;
     }
 
-    // ✅ SHOW PAGE
-    explanationBox.innerText += `\n\n📄 Page ${currentPage + 1}\n`;
-    explanationBox.innerText += data.explanation;
+    /* =========================
+       📄 PAGE BLOCK (KEY PART)
+    ========================= */
+    const pageBlock = document.createElement("div");
+    pageBlock.className = "page-block";
 
-    lastExplanation = data.explanation;
+    // heading
+    const heading = document.createElement("h3");
+    heading.innerText = `📄 Page ${currentPage + 1}`;
+    pageBlock.appendChild(heading);
 
+    // explanation text
+    const para = document.createElement("p");
+    para.innerText = data.explanation;
+    pageBlock.appendChild(para);
+
+    // audio (MANUAL ONLY)
+    if (data.audio_url) {
+      const audio = document.createElement("audio");
+      audio.controls = true;
+      audio.src = backendUrl + data.audio_url;
+      audio.preload = "metadata";
+      pageBlock.appendChild(audio);
+    } else {
+      const noAudio = document.createElement("p");
+      noAudio.innerText = "🔇 Audio available nahi hai";
+      pageBlock.appendChild(noAudio);
+    }
+
+    explanationBox.appendChild(pageBlock);
+
+    // pagination update
     currentPage = data.next_page;
     totalPages = data.total_pages;
+
     updateProgress();
     progressContainer.style.display = "block";
 
-    // 🔊 AUTO VOICE
-    playVoice();
-
-    // 🔥 AUTO NEXT (FIXED — TIMER BASED)
-    setTimeout(() => {
-      loadNextPage();
-    }, 4000); // 4 sec buffer per page
-
   } catch (e) {
-    explanationBox.innerText += "\n\n❌ Backend error";
+    const err = document.createElement("div");
+    err.innerText = "❌ Backend error";
+    explanationBox.appendChild(err);
   }
 
   isLoading = false;
 }
 
 /* =========================
-   📊 PROGRESS
+   📊 PROGRESS BAR
 ========================= */
 function updateProgress() {
   if (!totalPages) return;
