@@ -4,6 +4,10 @@
 let currentPage = 0;
 let totalPages = null;
 let isLoading = false;
+document.addEventListener("DOMContentLoaded", () => {
+  // 🔽 Pura existing script yahan paste karo
+});
+
 
 const backendUrl = "https://pdf-ai-teacher.onrender.com";
 
