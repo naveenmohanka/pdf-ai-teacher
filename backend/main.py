@@ -88,24 +88,27 @@ async def generate_audio(text: str, gender: str) -> str:
 @app.post("/upload-pdf")
 async def upload_pdf(
     file: UploadFile = File(...),
-    start_page: int = Query(0),
-    gender: str = Query("female")
+    start_page: int = Query(0)
 ):
     try:
-        # read PDF bytes
+        # STEP 1: read bytes
         pdf_bytes = await file.read()
 
-        # temp file
+        # STEP 2: temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(pdf_bytes)
             tmp_path = tmp.name
 
+        # STEP 3: read pdf
         with pdfplumber.open(tmp_path) as pdf:
             total_pages = len(pdf.pages)
 
             if start_page >= total_pages:
                 os.remove(tmp_path)
-                return {"status": "done", "total_pages": total_pages}
+                return {
+                    "status": "done",
+                    "total_pages": total_pages
+                }
 
             page = pdf.pages[start_page]
             text = page.extract_text() or ""
@@ -118,20 +121,33 @@ async def upload_pdf(
 
         os.remove(tmp_path)
 
-        audio_file = await generate_audio(explanation, gender)
+        # 🔊 AUDIO (OPTIONAL, SAFE)
+        try:
+            audio_file = await generate_audio(explanation)
+            audio_url = f"/audio/{audio_file}"
+        except Exception:
+            audio_url = None   # 🔥 VERY IMPORTANT
 
         return {
             "status": "success",
             "explanation": explanation,
-            "audio_url": f"/audio/{audio_file}",
+            "audio_url": audio_url,
             "next_page": start_page + 1,
             "total_pages": total_pages
         }
 
     except PDFSyntaxError:
-        return {"status": "error", "explanation": "PDF corrupt lag raha hai."}
+        return {
+            "status": "error",
+            "explanation": "PDF corrupt lag raha hai ya valid PDF nahi hai."
+        }
+
     except Exception as e:
-        return {"status": "error", "explanation": str(e)}
+        return {
+            "status": "error",
+            "explanation": f"PDF read error: {str(e)}"
+        }
+
 
 # =========================
 # AUDIO SERVE
