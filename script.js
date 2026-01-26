@@ -60,6 +60,9 @@ async function uploadPDF() {
   totalPages = null;
   explanationBox.innerHTML = "";
   progressContainer.style.display = "none";
+
+  document.getElementById("nextBtn").style.display = "inline-block"; // 🔥 ADD
+
   await loadNextPage();
 }
 
