@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
+import tempfile
+from pdfminer.pdfparser import PDFSyntaxError
 import os
 from openai import OpenAI
 
@@ -53,14 +55,21 @@ async def upload_pdf(
     file: UploadFile = File(...),
     start_page: int = Query(0)
 ):
-    # 🔥 reset file pointer every request
-    file.file.seek(0)
-
     try:
-        with pdfplumber.open(file.file) as pdf:
+        # 🔥 STEP 1: read PDF bytes
+        pdf_bytes = await file.read()
+
+        # 🔥 STEP 2: write to temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(pdf_bytes)
+            tmp_path = tmp.name
+
+        # 🔥 STEP 3: open temp PDF safely
+        with pdfplumber.open(tmp_path) as pdf:
             total_pages = len(pdf.pages)
 
             if start_page >= total_pages:
+                os.remove(tmp_path)
                 return {
                     "status": "done",
                     "total_pages": total_pages
@@ -75,11 +84,20 @@ async def upload_pdf(
                 else "Is page me readable text nahi mila."
             )
 
+        # 🔥 cleanup temp file
+        os.remove(tmp_path)
+
         return {
             "status": "success",
             "explanation": explanation,
             "next_page": start_page + 1,
             "total_pages": total_pages
+        }
+
+    except PDFSyntaxError:
+        return {
+            "status": "error",
+            "explanation": "PDF corrupt lag raha hai ya valid PDF nahi hai."
         }
 
     except Exception as e:
