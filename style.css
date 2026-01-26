@@ -59,3 +59,11 @@ button {
   50% { transform: scaleX(1); }
   100% { transform: scaleX(0.6); }
 }
+.word {
+  transition: background 0.2s;
+}
+
+.highlight {
+  background: #fff3a0;
+  border-radius: 4px;
+}
