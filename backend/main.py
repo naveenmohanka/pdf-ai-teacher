@@ -9,11 +9,24 @@ import uuid
 import edge_tts
 from openai import OpenAI
 
+# =========================
+# CONFIG
+# =========================
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+VOICE_MAP = {
+    "female": "en-IN-NeerjaNeural",
+    "male": "en-IN-PrabhatNeural"
+}
+
+AUDIO_DIR = "audio"
+os.makedirs(AUDIO_DIR, exist_ok=True)
+
+# =========================
+# APP
+# =========================
 app = FastAPI()
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,17 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-AUDIO_DIR = "audio"
-os.makedirs(AUDIO_DIR, exist_ok=True)
-
-
 @app.get("/")
 def home():
-    return {"message": "PDF AI Teacher backend running (MP3 enabled)"}
-
+    return {"message": "PDF AI Teacher backend running (MP3 + gender + page-wise)"}
 
 # =========================
-# AI EXPLANATION (UNCHANGED STYLE)
+# AI EXPLANATION (STYLE LOCKED 🔒)
 # =========================
 def explain_like_teacher(text: str) -> str:
     prompt = f"""
@@ -57,35 +65,37 @@ Content:
     )
     return response.choices[0].message.content.strip()
 
-
 # =========================
 # MP3 GENERATION
 # =========================
-async def generate_audio(text: str) -> str:
+async def generate_audio(text: str, gender: str) -> str:
+    voice = VOICE_MAP.get(gender, VOICE_MAP["female"])
     filename = f"{uuid.uuid4()}.mp3"
     path = os.path.join(AUDIO_DIR, filename)
 
     communicate = edge_tts.Communicate(
         text=text,
-        voice="en-IN-NeerjaNeural",   # 🔥 best Hinglish voice
+        voice=voice,
         rate="+0%",
         pitch="+0Hz"
     )
     await communicate.save(path)
     return filename
 
-
 # =========================
-# PDF PAGE-WISE API
+# PAGE-WISE PDF API
 # =========================
 @app.post("/upload-pdf")
 async def upload_pdf(
     file: UploadFile = File(...),
-    start_page: int = Query(0)
+    start_page: int = Query(0),
+    gender: str = Query("female")
 ):
     try:
+        # read PDF bytes
         pdf_bytes = await file.read()
 
+        # temp file
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             tmp.write(pdf_bytes)
             tmp_path = tmp.name
@@ -108,7 +118,7 @@ async def upload_pdf(
 
         os.remove(tmp_path)
 
-        audio_file = await generate_audio(explanation)
+        audio_file = await generate_audio(explanation, gender)
 
         return {
             "status": "success",
@@ -120,10 +130,8 @@ async def upload_pdf(
 
     except PDFSyntaxError:
         return {"status": "error", "explanation": "PDF corrupt lag raha hai."}
-
     except Exception as e:
         return {"status": "error", "explanation": str(e)}
-
 
 # =========================
 # AUDIO SERVE
