@@ -87,9 +87,10 @@ async function loadNextPage() {
     const data = await res.json();
 
     if (data.status === "done") {
-      explanationBox.innerHTML += `<p>✅ Poora PDF explain ho gaya.</p>`;
-      return;
-    }
+  explanationBox.innerText += "\n\n✅ Poora PDF explain ho gaya.";
+  isLoading = false;        // 🔥 VERY IMPORTANT
+  return;
+}
 
     if (data.status === "error") {
       explanationBox.innerHTML += `<p>❌ ${data.explanation}</p>`;
