@@ -1,3 +1,6 @@
+/* =========================
+   🌐 GLOBAL STATE
+========================= */
 let currentPage = 0;
 let totalPages = null;
 let isLoading = false;
@@ -10,6 +13,9 @@ const progressText = document.getElementById("progressText");
 const progressContainer = document.getElementById("progressContainer");
 const audioPlayer = document.getElementById("audioPlayer");
 
+/* =========================
+   📄 PDF FLOW
+========================= */
 async function uploadPDF() {
   currentPage = 0;
   totalPages = null;
@@ -29,14 +35,12 @@ async function loadNextPage() {
     return;
   }
 
-  const gender = document.getElementById("voiceGender").value;
-
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
     const response = await fetch(
-      `${backendUrl}/upload-pdf?start_page=${currentPage}&gender=${gender}`,
+      `${backendUrl}/upload-pdf?start_page=${currentPage}`,
       { method: "POST", body: formData }
     );
 
@@ -52,14 +56,13 @@ async function loadNextPage() {
       return;
     }
 
-    // Page header
+    // 📄 Page heading
     explanationBox.innerText += `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
     explanationBox.innerText += data.explanation;
 
-    // 🔊 MP3 AUDIO WITH SEEK BAR
+    // 🔊 MP3 AUDIO
     audioPlayer.src = backendUrl + data.audio_url;
     audioPlayer.load();
-    audioPlayer.play();
 
     audioPlayer.onended = () => {
       currentPage = data.next_page;
@@ -70,16 +73,39 @@ async function loadNextPage() {
     updateProgress();
     progressContainer.style.display = "block";
 
-  } catch (e) {
+  } catch (err) {
     explanationBox.innerText += "\n\n❌ Backend error";
   }
 
   isLoading = false;
 }
 
+/* =========================
+   📊 PROGRESS BAR
+========================= */
 function updateProgress() {
   if (!totalPages) return;
   const percent = Math.round((currentPage / totalPages) * 100);
   progressBar.style.width = percent + "%";
   progressText.innerText = percent + "%";
+}
+
+/* =========================
+   🔊 AUDIO CONTROLS (FIXED)
+========================= */
+function playVoice() {
+  audioPlayer.play();
+}
+
+function pauseSpeech() {
+  audioPlayer.pause();
+}
+
+function resumeSpeech() {
+  audioPlayer.play();
+}
+
+function stopSpeech() {
+  audioPlayer.pause();
+  audioPlayer.currentTime = 0;
 }
