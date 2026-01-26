@@ -29,12 +29,14 @@ async function loadNextPage() {
     return;
   }
 
+  const gender = document.getElementById("voiceGender").value;
+
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
   try {
     const response = await fetch(
-      `${backendUrl}/upload-pdf?start_page=${currentPage}`,
+      `${backendUrl}/upload-pdf?start_page=${currentPage}&gender=${gender}`,
       { method: "POST", body: formData }
     );
 
@@ -50,10 +52,11 @@ async function loadNextPage() {
       return;
     }
 
+    // Page header
     explanationBox.innerText += `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
     explanationBox.innerText += data.explanation;
 
-    // 🔊 MP3 AUDIO
+    // 🔊 MP3 AUDIO WITH SEEK BAR
     audioPlayer.src = backendUrl + data.audio_url;
     audioPlayer.load();
     audioPlayer.play();
@@ -61,21 +64,13 @@ async function loadNextPage() {
     audioPlayer.onended = () => {
       currentPage = data.next_page;
       loadNextPage();
-      const gender = document.getElementById("voiceGender").value;
-
-const response = await fetch(
-  `${backendUrl}/upload-pdf?start_page=${currentPage}&gender=${gender}`,
-  { method: "POST", body: formData }
-);
-
     };
 
     totalPages = data.total_pages;
     updateProgress();
-
     progressContainer.style.display = "block";
 
-  } catch {
+  } catch (e) {
     explanationBox.innerText += "\n\n❌ Backend error";
   }
 
