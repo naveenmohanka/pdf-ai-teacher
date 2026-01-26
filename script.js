@@ -1,13 +1,8 @@
-/* =========================
-   🌐 GLOBAL STATE
-========================= */
 let currentPage = 0;
 let totalPages = null;
 let isLoading = false;
-document.addEventListener("DOMContentLoaded", () => {
-  // 🔽 Pura existing script yahan paste karo
-});
-
+let lastExplanation = "";
+let utterance = null;
 
 const backendUrl = "https://pdf-ai-teacher.onrender.com";
 
@@ -15,10 +10,9 @@ const explanationBox = document.getElementById("explanation");
 const progressBar = document.getElementById("progressBar");
 const progressText = document.getElementById("progressText");
 const progressContainer = document.getElementById("progressContainer");
-const audioPlayer = document.getElementById("audioPlayer");
 
 /* =========================
-   📄 PDF FLOW
+   PDF FLOW
 ========================= */
 async function uploadPDF() {
   currentPage = 0;
@@ -43,12 +37,11 @@ async function loadNextPage() {
   formData.append("file", fileInput.files[0]);
 
   try {
-    const response = await fetch(
+    const res = await fetch(
       `${backendUrl}/upload-pdf?start_page=${currentPage}`,
       { method: "POST", body: formData }
     );
-
-    const data = await response.json();
+    const data = await res.json();
 
     if (data.status === "done") {
       explanationBox.innerText += "\n\n✅ Poora PDF explain ho gaya.";
@@ -60,24 +53,19 @@ async function loadNextPage() {
       return;
     }
 
-    // 📄 Page heading
-    explanationBox.innerText += `\n\n📄 Page ${currentPage + 1} Explanation:\n`;
+    explanationBox.innerText += `\n\n📄 Page ${currentPage + 1}\n`;
     explanationBox.innerText += data.explanation;
 
-    // 🔊 MP3 AUDIO
-    audioPlayer.src = backendUrl + data.audio_url;
-    audioPlayer.load();
+    lastExplanation = data.explanation;
 
-    audioPlayer.onended = () => {
-      currentPage = data.next_page;
-      loadNextPage();
-    };
-
+    currentPage = data.next_page;
     totalPages = data.total_pages;
+
     updateProgress();
     progressContainer.style.display = "block";
 
-  } catch (err) {
+    playVoice(); // 🔊 AUTO SPEAK
+  } catch {
     explanationBox.innerText += "\n\n❌ Backend error";
   }
 
@@ -85,7 +73,7 @@ async function loadNextPage() {
 }
 
 /* =========================
-   📊 PROGRESS BAR
+   PROGRESS BAR
 ========================= */
 function updateProgress() {
   if (!totalPages) return;
@@ -95,21 +83,32 @@ function updateProgress() {
 }
 
 /* =========================
-   🔊 AUDIO CONTROLS (FIXED)
+   BROWSER AUDIO (FINAL)
 ========================= */
 function playVoice() {
-  audioPlayer.play();
+  if (!lastExplanation) return;
+
+  window.speechSynthesis.cancel();
+  utterance = new SpeechSynthesisUtterance(lastExplanation);
+  utterance.lang = "en-IN";
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+
+  utterance.onend = () => {
+    setTimeout(loadNextPage, 800); // 🔥 AUTO NEXT PAGE
+  };
+
+  window.speechSynthesis.speak(utterance);
 }
 
 function pauseSpeech() {
-  audioPlayer.pause();
+  window.speechSynthesis.pause();
 }
 
 function resumeSpeech() {
-  audioPlayer.play();
+  window.speechSynthesis.resume();
 }
 
 function stopSpeech() {
-  audioPlayer.pause();
-  audioPlayer.currentTime = 0;
+  window.speechSynthesis.cancel();
 }
