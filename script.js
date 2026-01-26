@@ -85,11 +85,12 @@ async function loadNextPage() {
     const data = await res.json();
 
     // ✅ DONE
-    if (data.status === "done") {
-      explanationBox.innerHTML += `<p>✅ Poora PDF explain ho gaya.</p>`;
-      isLoading = false;
-      return;
-    }
+   if (data.status === "done") {
+  explanationBox.innerHTML += `<p>✅ Poora PDF explain ho gaya.</p>`;
+  document.getElementById("nextBtn").style.display = "none";
+  isLoading = false;   // 🔥 MUST
+  return;
+}
 
     // ❌ ERROR (FIXED)
     if (data.status === "error") {
