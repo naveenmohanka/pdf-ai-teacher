@@ -67,3 +67,16 @@ button {
   background: #fff3a0;
   border-radius: 4px;
 }
+.page-block {
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.page-block audio {
+  width: 100%;
+  margin-top: 8px;
+}
+
