@@ -46,32 +46,44 @@ Content:
     return response.choices[0].message.content.strip()
 
 
+from fastapi import UploadFile, File, Query
+
 @app.post("/upload-pdf")
 async def upload_pdf(
     file: UploadFile = File(...),
     start_page: int = Query(0)
 ):
-    with pdfplumber.open(file.file) as pdf:
-        total_pages = len(pdf.pages)
+    # 🔥 reset file pointer every request
+    file.file.seek(0)
 
-        # 🔚 PDF khatam
-        if start_page >= total_pages:
-            return {
-                "status": "done",
-                "total_pages": total_pages
-            }
+    try:
+        with pdfplumber.open(file.file) as pdf:
+            total_pages = len(pdf.pages)
 
-        page = pdf.pages[start_page]
-        text = page.extract_text()
+            if start_page >= total_pages:
+                return {
+                    "status": "done",
+                    "total_pages": total_pages
+                }
 
-        if not text or not text.strip():
-            explanation = "Is page me readable text nahi mila."
-        else:
-            explanation = explain_like_teacher(text[:1200])  # 🔥 HARD LIMIT
+            page = pdf.pages[start_page]
+            text = page.extract_text() or ""
 
-    return {
-        "status": "success",
-        "explanation": explanation,
-        "next_page": start_page + 1,
-        "total_pages": total_pages
-    }
+            explanation = (
+                explain_like_teacher(text[:1200])
+                if text.strip()
+                else "Is page me readable text nahi mila."
+            )
+
+        return {
+            "status": "success",
+            "explanation": explanation,
+            "next_page": start_page + 1,
+            "total_pages": total_pages
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "explanation": f"PDF read error: {str(e)}"
+        }
