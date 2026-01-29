@@ -23,9 +23,11 @@ def home():
 
 
 def explain_like_teacher(text: str) -> str:
-    prompt = f"""
-Tum ek real Indian teacher ho jo naturally Hinglish me
-student ko samjha raha hai.
+    return (
+        "Is page ka text extract ho gaya hai, "
+        "lekin abhi AI explanation temporarily disabled hai "
+        "kyunki API quota khatam ho chuka hai."
+    )
 
 Rules:
 - Sirf Hinglish
