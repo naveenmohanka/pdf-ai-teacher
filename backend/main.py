@@ -64,16 +64,18 @@ async def upload_pdf(
 
             if start_page >= total_pages:
                 os.remove(tmp_path)
-                return {"status": "done", "total_pages": total_pages}
+                return {
+                    "status": "done",
+                    "total_pages": total_pages
+                }
 
             page = pdf.pages[start_page]
             text = page.extract_text() or ""
 
-            explanation = (
-                explain_like_teacher(text[:1200])
-                if text.strip()
-                else "Is page me readable text nahi mila."
-            )
+            if text.strip():
+                explanation = explain_like_teacher(text[:1200])
+            else:
+                explanation = "Is page me readable text nahi mila."
 
         os.remove(tmp_path)
 
@@ -84,10 +86,8 @@ async def upload_pdf(
             "total_pages": total_pages
         }
 
-   except Exception as e:
-    if "insufficient_quota" in str(e):
+    except Exception as e:
         return {
             "status": "error",
-            "explanation": "⚠️ AI quota khatam ho gaya hai. Please billing enable karo."
+            "explanation": str(e)
         }
-    return {"status": "error", "explanation": str(e)}
