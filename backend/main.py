@@ -84,5 +84,10 @@ async def upload_pdf(
             "total_pages": total_pages
         }
 
-    except Exception as e:
-        return {"status": "error", "explanation": str(e)}
+   except Exception as e:
+    if "insufficient_quota" in str(e):
+        return {
+            "status": "error",
+            "explanation": "⚠️ AI quota khatam ho gaya hai. Please billing enable karo."
+        }
+    return {"status": "error", "explanation": str(e)}
